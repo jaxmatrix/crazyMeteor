@@ -14,6 +14,7 @@ function setup(){
 
   frameRate(30);
 
+  /*
   r = new rocket(100,100,10,10,'rgb(25,25,100)')
   r.draw();
 
@@ -23,23 +24,26 @@ function setup(){
     m.push(x);
   }
 
-  /*
+  */
+
+
   g = new game();
   g.setup(()=>{
     console.log("Game Started");
   });
-  */
+
 }
 
 function draw(){
-  background(240);
+  //background(240);
 
+  /*
   r.move();
   m.forEach((rock)=>{
     rock.move();
     r.collision(rock);
   });
-
+  */
 }
 
 class game{
@@ -49,6 +53,8 @@ class game{
   }
 
  setup(callback){
+
+    background(240);
     push();
     fill(0);
     translate(width/2,height/2);
@@ -282,9 +288,17 @@ function keyReleased(){
   key='';
 }
 
-function mouseIsClicked(box){
+function mouseIsClicked(box,success,fail){
   if(
-    mouseX > box.x - box.width
-
-  ){}
+     mouseX > box.pos.x - box.width/2 &&
+     mouseX < box.pos.x + box.width/2 &&
+     mouseY > box.pos.y - box.height/2 &&
+     mouseX < box.pos.y + box.height/2
+  )
+  {
+    success();
+  }
+  else {
+    fail();
+  }
 }
