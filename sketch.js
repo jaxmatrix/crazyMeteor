@@ -1,7 +1,12 @@
 //Debugging
 let reff = true;
-let height = 320;
-let width = 640;
+let height = 800 ;
+let width = 800;
+let action = false;
+let gameOver = false;
+let g;
+let time = new Date();
+let now;
 
 let r;
 let m = [];
@@ -12,9 +17,8 @@ function setup(){
   angleMode(DEGREES);
   rectMode(CENTER);
 
-  frameRate(30);
-
   /*
+  frameRate(30);
   r = new rocket(100,100,10,10,'rgb(25,25,100)')
   r.draw();
 
@@ -29,12 +33,74 @@ function setup(){
 
   g = new game();
   g.setup(()=>{
-    console.log("Game Started");
-  });
+
+    frameRate(30);
+    // Time Stamping
+    console.log("Setting Start Time");
+    now = new Date().getTime()/1000;
+
+    action = true;
+    r = new rocket(width/2,height/2,10,10,'rgb(25,25,100)')
+    r.draw();
+    r.onCollision(()=>{
+        action = false;
+        g.gameOver()
+      });
+
+    for(i=0;i<10;i++){
+      let x=new meteor(random(width),random(height),random(6,20),random(360),random(6));
+      x.draw();
+      m.push(x);
+    }
+  },
+  ()=>{
+    console.log("Game under progress");
+    background(240);
+    r.move();
+    m.forEach((rock)=>{
+      rock.move();
+      r.collision(rock);
+      });
+    },
+    ()=>{
+          //r = null;
+          //m = [];
+          noLoop();
+          gameOver = true;
+          timeComment("GAME OVER ::" + gameOver)
+    });
+
 
 }
 
+function mouseClicked(){
+  if(!action){
+    timeComment("Making Action");
+    g.set();
+    loop();
+  }
+
+  if(gameOver){
+    timeComment("RESET");
+    reset();
+    gameOver = false;
+    g.home();
+    action = false;
+  }
+  console.log("Mouse Clicked");
+
+}
+
+function reset(){
+  r = null;
+  m = [];
+}
+
 function draw(){
+  if(!gameOver){
+    timeComment("Working Out");
+    g.start()
+  }
   //background(240);
 
   /*
@@ -52,8 +118,7 @@ class game{
     this.score = 0;
   }
 
- setup(callback){
-
+  home(){
     background(240);
     push();
     fill(0);
@@ -64,8 +129,43 @@ class game{
     textSize(height/4);
     text("Start",0,0);
     pop();
+  }
 
-    callback();
+ setup(set,play,endGame){
+   //Disable Animation
+    this.home();
+    this.set = set;
+    this.play = play;
+    this.endGame = endGame;
+  }
+
+  start(){
+    timeComment("onGoing");
+    if(action && !gameOver){
+      this.play();
+      this.updateScore();
+    }
+  }
+
+  updateScore(){
+    this.score += 1;
+    timeComment(this.score)
+  }
+
+  gameOver(cleanup){
+    //console.log("Game is over");
+    push();
+    textAlign(CENTER,CENTER)
+    translate(width/2,height/2);
+    textSize(50);
+    text("Your Score :" + this.score,0,0);
+    pop();
+
+    this.score = 0;
+
+    timeComment("Ending Game");
+    this.endGame();
+
   }
 }
 
@@ -122,24 +222,23 @@ class rocket{
     line(s,0,-s,0);
     pop();
   }
+  onCollision(f){
+    this.cb = f;
+  }
 
   move(){
     let v = createVector(sin(this.direction),-cos(this.direction)).mult(this.velocity+this.acc)
     this.pos.add(v);
 
-    if(this.pos.x <= 0){
-      this.pos.x = width;
+    if(this.pos.x < 0 || this.pos.x > width || this.pos.y > height || this.pos.y < 0){
+      this.cb();
+      console.log("collision");
+      this.alert = true;
     }
-    else if(this.pos.x >= width){
-      this.pos.x = 0;
+    else {
+      alert = false;
     }
 
-    if(this.pos.y <= 0){
-      this.pos.y = height;
-    }
-    else if(this.pos.y >= height){
-      this.pos.y = 0;
-    }
     //console.log(this.velocity);
     if(keyIsPressed === true){
       this.color = 'rgb(0,255,0)';
@@ -186,10 +285,12 @@ class rocket{
     if(d <= this.r + other.r){
       console.log("collision");
       this.alert = true;
+      this.cb();
     }
     else {
       this.alert=false;
     }
+
   }
 
 }
@@ -301,4 +402,9 @@ function mouseIsClicked(box,success,fail){
   else {
     fail();
   }
+}
+
+function timeComment(comment,){
+  let t = new Date().getTime()/1000;
+  console.log(comment,t-now);
 }
