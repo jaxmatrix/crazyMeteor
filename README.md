@@ -8,8 +8,8 @@ Controls :
             'Left Arrow' => Turn Left
             'Right Arrow' => Turn Right
 
-#To play
+# To play
 
 1. Download the package from github
 2. Unzip the file
-3. Run index.html 
+3. Run index.html
