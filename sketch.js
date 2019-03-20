@@ -12,11 +12,8 @@ let r;
 let m = [];
 function setup(){
   createCanvas(width,height);
-
-
   angleMode(DEGREES);
   rectMode(CENTER);
-
   /*
   frameRate(30);
   r = new rocket(100,100,10,10,'rgb(25,25,100)')
@@ -29,8 +26,6 @@ function setup(){
   }
 
   */
-
-
   g = new game();
   g.setup(()=>{
 
@@ -101,15 +96,6 @@ function draw(){
     timeComment("Working Out");
     g.start()
   }
-  //background(240);
-
-  /*
-  r.move();
-  m.forEach((rock)=>{
-    rock.move();
-    r.collision(rock);
-  });
-  */
 }
 
 class game{
@@ -226,13 +212,37 @@ class rocket{
     this.cb = f;
   }
 
+  this.forwardAcc(){
+    this.acc+=0.2
+  }
+
+  this.backwardAcc(){
+    this.acc-=0.2;
+  }
+
+  this.turnRight(){
+    this.dir+=10;
+
+    if(this.dir>=360){
+      this.dir -= 360;
+    }
+  }
+
+  this.turnLeft(){
+    this.dir-=10;
+
+    if(this.dir<0){
+      this.dir += 360;
+    }
+  }
+
   move(){
     let v = createVector(sin(this.direction),-cos(this.direction)).mult(this.velocity+this.acc)
     this.pos.add(v);
 
     if(this.pos.x < 0 || this.pos.x > width || this.pos.y > height || this.pos.y < 0){
       this.cb();
-      console.log("collision");
+      timeComment("collision")
       this.alert = true;
     }
     else {
