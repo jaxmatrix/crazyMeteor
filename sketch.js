@@ -164,6 +164,7 @@ class rocket{
     this.acc = 0;
     this.alert = false;
     this.r = 6;
+    this.learning = 0;
   }
 
   draw(){
@@ -212,27 +213,27 @@ class rocket{
     this.cb = f;
   }
 
-  this.forwardAcc(){
+  forwardAcc(){
     this.acc+=0.2
   }
 
-  this.backwardAcc(){
+  backwardAcc(){
     this.acc-=0.2;
   }
 
-  this.turnRight(){
-    this.dir+=10;
+  turnRight(){
+    this.direction+=10;
 
-    if(this.dir>=360){
-      this.dir -= 360;
+    if(this.direction>=360){
+      this.direction -= 360;
     }
   }
 
-  this.turnLeft(){
-    this.dir-=10;
+  turnLeft(){
+    this.direction-=10;
 
-    if(this.dir<0){
-      this.dir += 360;
+    if(this.direction<0){
+      this.direction += 360;
     }
   }
 
@@ -267,24 +268,26 @@ class rocket{
 
     */
 
-    if(keyIsDown(87)){
-      this.acc += 0.2;
+    const W = 87, S = 83, LA = 65, RA = 68;
+
+    if(keyIsDown(W)){
+      this.forwardAcc()
       console.log(key);
     }
 
-    else if(keyIsDown(83)){
-      this.acc -= 0.2;
-      console.log(this.acc);
+    else if(keyIsDown(S)){
+      this.backwardAcc()
+      console.log(key);
     }
 
     //turn Rocket
-    if(keyIsDown(39)){
-      this.direction += 10;
+    if(keyIsDown(RA)){
+      this.turnRight()
       console.log(key);
     }
 
-    else if(keyIsDown(37)){
-      this.direction -= 10
+    else if(keyIsDown(LA)){
+      this.turnLeft()
       console.log(key);
     }
     this.draw()
@@ -298,25 +301,36 @@ class rocket{
       this.cb();
     }
     else {
+      if(d <= this.r + other.informationRadius){
+        this.learning = 3;
+      }
       this.alert=false;
     }
+
+  //  sensors(){}
 
   }
 
 }
+
 class meteor{
   constructor(x,y,r=5,dir=0,vel=5){
     this.pos = createVector(x,y);
     this.velocity = vel;
     this.direction = dir;
     this.r = r;
+    this.informationRadius = r*4;
   }
 
   draw(){
     push();
     translate(this.pos.x,this.pos.y);
+    fill('rgba(0,150,0,0.2)');
+    circle(0,0,this.informationRadius);
     fill(255,0,0);
     circle(0,0,this.r);
+
+    //Inforamation Field
     pop();
   }
 
@@ -351,6 +365,52 @@ class meteor{
     this.draw();
     //console.log("Meteor Velocity",this.velocity);
   }
+}
+
+class radar{
+
+}
+
+class sensor{
+  constructor(origin,reffAngle,dir,range){
+    this.origin = origin;
+    this.dir = dir;
+    this.active = false;
+    this.range = range;
+    this.reffAngle = reffAngle;
+  }
+
+
+  deactivate(){
+    this.active = false;
+  }
+
+  activation(activator,d,neuron){
+    this.active = true;
+    globalToLocal(activator.pos).then((pos)=>{
+      slopeFactor().then((sf)=>{
+        slopePos(pos).then((sp)=>{
+          acitvate(sf,sp,d).then((val)=>{
+            neuron.push(val);
+          },timeComment("Position Activation failed : " + dir + " : activate" ))
+        },timeComment("Position Activation failed : " + dir + " : slopePos" ));
+      },timeComment("Position Activation failed : " + dir + " : slopeFactor" ));
+    },timeComment("Position Activation failed : " + dir + " : globalToLocal" ));
+  }
+
+  activate(activator,d,neuron){
+
+  }
+  /*
+
+  function globalToLocal(o){
+
+  }
+  */
+}
+
+function globalToLocal(){
+
 }
 
 //Generic objects

@@ -5,8 +5,8 @@ You are trapped in a two dimensional meteor field. Now these meteor have have th
 Controls :
             'W' => For Acceleration
             'S' => For Dcceleration
-            'Left Arrow' => Turn Left
-            'Right Arrow' => Turn Right
+            'A' => Turn Left
+            'D' => Turn Right
 
 # To play
 
