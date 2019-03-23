@@ -7,6 +7,7 @@ let gameOver = false;
 let g;
 let time = new Date();
 let now;
+let SPACE = 32;
 
 let r;
 let m = [];
@@ -74,6 +75,12 @@ function setup(){
 }
 
 function mouseClicked(){
+  gameHandler();
+  console.log("Mouse Clicked");
+
+}
+
+function gameHandler(){
   if(!action){
     timeComment("Making Action");
     g.set();
@@ -87,9 +94,16 @@ function mouseClicked(){
     g.home();
     action = false;
   }
-  console.log("Mouse Clicked");
-
 }
+
+$(document).ready(function(){
+  $(document).keypress(function(e){
+    if(game && e.which==SPACE){
+      gameHandler();
+      timeComment("SPACE pushed");
+    }
+  });
+});
 
 function reset(){
   r = null;
