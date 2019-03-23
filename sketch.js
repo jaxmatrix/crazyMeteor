@@ -7,9 +7,11 @@ let gameOver = false;
 let g;
 let time = new Date();
 let now;
-
+let SPACE = 32;
 let r;
 let m = [];
+
+
 function setup(){
   createCanvas(width,height);
   angleMode(DEGREES);
@@ -65,10 +67,22 @@ function setup(){
           timeComment("GAME OVER ::" + gameOver)
     });
 
-
 }
 
+/*
+Control for space
+*/
+
+/*
+if(keyIsDown(SPACE)){
+  gameHadler()
+}
+*/
 function mouseClicked(){
+  gameHandler();
+}
+
+function gameHandler(){
   if(!action){
     timeComment("Making Action");
     g.set();
@@ -83,7 +97,6 @@ function mouseClicked(){
     action = false;
   }
   console.log("Mouse Clicked");
-
 }
 
 function reset(){
@@ -96,6 +109,7 @@ function draw(){
     timeComment("Working Out");
     g.start()
   }
+
 }
 
 class game{
@@ -378,6 +392,54 @@ class sensor{
     this.active = false;
     this.range = range;
     this.reffAngle = reffAngle;
+    this.rotation = 0;
+    //Defining private functipn
+    function globalToLocal(pos){
+
+      let shift = pos.sub(this.origin)
+      rotation = shift.heading() - (this.reffAngle + this.dir);
+      let newC = createVector(sin(rotation),-cos(rotation)).mult(shift.mag());
+      return new Promise(function(resolve,failure){
+        if(newPos != null){
+          resolve(newC);
+        }
+        else {
+          failure();
+        }
+      });
+    }
+
+    function getNearestInterceptAlongTheDirectionOfVector(pos,r){
+      let D = sqrt(r*r - pos.x*pos.x)
+      let Y = [
+        -(pos.y + D ),
+        -(pos.y - D )
+      ]
+
+      let nearest = 0;
+      for (var c in Y){
+        nearest = (abs(nearest) <= abs(c)) ? c : nearest;
+      }
+
+      return new Promise((resolve,reject)=>{
+        if(abs(nearest) > 0){
+          resolve(nearest)
+        }
+        else {
+          reject()
+        }
+      });
+    }
+
+    function drawInteraction(posInMinusY){
+      pop();
+      translate(this.origin);
+      rotate(this.dir + this.reffAngle);
+      fill('rgb(28, 82, 12)');
+      circle(0,posInMinusY,10);
+      push();
+    }
+
   }
 
 
@@ -388,14 +450,13 @@ class sensor{
   activation(activator,d,neuron){
     this.active = true;
     globalToLocal(activator.pos).then((pos)=>{
-      slopeFactor().then((sf)=>{
-        slopePos(pos).then((sp)=>{
-          acitvate(sf,sp,d).then((val)=>{
-            neuron.push(val);
-          },timeComment("Position Activation failed : " + dir + " : activate" ))
-        },timeComment("Position Activation failed : " + dir + " : slopePos" ));
-      },timeComment("Position Activation failed : " + dir + " : slopeFactor" ));
-    },timeComment("Position Activation failed : " + dir + " : globalToLocal" ));
+      getNearestInterceptAlongTheDirectionOfVector(pos,activator.r).then((nearest)=>{
+        neuron.set(abs(nearest)).then(()=>{
+          this.deactivate();
+        },timeComment("Failed to set Neuron " + this.dir ));
+        drawInteraction(nearest);
+      },timeComment("Failed to compute :: intercept"));
+    },timeComment("Failed to compute :: gtl "));
   }
 
   activate(activator,d,neuron){
