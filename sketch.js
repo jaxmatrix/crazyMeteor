@@ -1,7 +1,7 @@
 //Debugging
 let reff = false;
 let debug = true;
-
+let MeteorAlert = true;
 if(debug){
 
 }
@@ -73,11 +73,12 @@ function setup(){
   ()=>{
     //console.log("Game under progress");
     background(240);
-    radar.draw();
+    radar.update();
     r.move();
     m.forEach((rock)=>{
       rock.move();
       r.collision(rock);
+      radar.checkCollision(rock)
       });
     },
     ()=>{
@@ -91,15 +92,6 @@ function setup(){
 		});
 }
 
-/*
-Control for space
-*/
-
-/*
-if(keyIsDown(SPACE)){
-  gameHadler()
-}
-*/
 function mouseClicked(){
   gameHandler();
 }
@@ -308,7 +300,7 @@ class Rocket{
     //console.log(this.velocity);
     if(keyIsPressed === true){
       this.color = 'rgb(0,255,0)';
-      console.log(this.color,key);
+      //onsole.log(this.color,key);
     }
     else {
       this.color = 'rgb(10,10,100)';
@@ -327,23 +319,23 @@ class Rocket{
 
     if(keyIsDown(W)){
       this.forwardAcc()
-      console.log(key);
+      //console.log(key);
     }
 
     else if(keyIsDown(S)){
       this.backwardAcc()
-      console.log(key);
+      //console.log(key);
     }
 
     //turn Rocket
     if(keyIsDown(RA)){
       this.turnRight()
-      console.log(key);
+      //console.log(key);
     }
 
     else if(keyIsDown(LA)){
       this.turnLeft()
-      console.log(key);
+      //console.log(key);
     }
     this.draw()
   }
@@ -351,7 +343,7 @@ class Rocket{
   collision(other){
     let d = dist(this.pos.x,this.pos.y,other.pos.x,other.pos.y);
     if(d <= this.r + other.r){
-      console.log("collision");
+      //console.log("collision");
       this.alert = true;
       this.cb();
     }
@@ -457,12 +449,30 @@ class Radar{
       //start indexes
       let start = ceil(A1/dt);
       let end = floor(A2/dt);
-
       for(var i = start; i <= end; i++){
         d.push(i);
       }
 
       return d
+
+    }
+
+
+  }
+
+  checkCollision(meteor){
+    let x = createVector(meteor.pos.x,meteor.pos.y)
+    console.log(x,meteor.pos)
+    let d = x.sub(this.rocket.pos).mag()
+    if( d < this.range){
+      //Setup the collidor in the collision check engine
+      this.collidor.push(meteor)
+      if(MeteorAlert){
+        push();
+        stroke('rgb(255, 0, 0)');
+        line(this.rocket.pos.x,this.rocket.pos.y,meteor.pos.x,meteor.pos.y);
+        pop();
+      }
 
     }
 
@@ -481,8 +491,12 @@ class Radar{
     for(let i = 0; i< this.nos;i++){
       let s = this.sensors[i];
       //console.log("Drawing Sensor ",this.sensors[i]);
-      s.draw()
+      //s.draw()
     }
+  }
+
+  update(){
+    this.draw();
   }
 
 }
