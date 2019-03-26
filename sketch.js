@@ -1,5 +1,17 @@
 //Debugging
 let reff = false;
+let debug = true;
+
+if(debug){
+
+}
+
+
+/*
+  Environement Setup
+
+*/
+
 let height = 800 ;
 let width = 800;
 let action = false;
@@ -9,7 +21,9 @@ let time = new Date();
 let now;
 let SPACE = 32;
 let r;
+let radar;
 let m = [];
+
 
 
 function setup(){
@@ -28,6 +42,8 @@ function setup(){
   }
 
   */
+
+
   g = new game();
   g.setup(()=>{
 
@@ -37,7 +53,11 @@ function setup(){
     now = new Date().getTime()/1000;
 
     action = true;
-    r = new rocket(width/2,height/2,10,10,'rgb(25,25,100)')
+
+    r = new Rocket(width/2,height/2,10,10,'rgb(25,25,100)');
+    radar = new Radar(r,250,10);
+
+
     r.draw();
     r.onCollision(()=>{
         action = false;
@@ -45,14 +65,15 @@ function setup(){
       });
 
     for(i=0;i<10;i++){
-      let x=new meteor(random(width),random(height),random(6,20),random(360),random(6));
+      let x=new Meteor(random(width),random(height),random(6,20),random(360),random(6));
       x.draw();
       m.push(x);
     }
   },
   ()=>{
-    console.log("Game under progress");
+    //console.log("Game under progress");
     background(240);
+    radar.draw();
     r.move();
     m.forEach((rock)=>{
       rock.move();
@@ -65,8 +86,9 @@ function setup(){
           noLoop();
           gameOver = true;
           timeComment("GAME OVER ::" + gameOver)
-    });
-
+    }).then(()=>{
+      //radar = new Radar(250,10)
+		});
 }
 
 /*
@@ -106,10 +128,11 @@ function reset(){
 
 function draw(){
   if(!gameOver){
-    timeComment("Working Out");
+    //timeComment("Working Out");
     g.start()
   }
 
+  //radar.draw();
 }
 
 class game{
@@ -137,10 +160,14 @@ class game{
     this.set = set;
     this.play = play;
     this.endGame = endGame;
-  }
+
+		return new Promise((resolve)=>{
+			resolve();
+		});
+	}
 
   start(){
-    timeComment("onGoing");
+    //timeComment("onGoing");
     if(action && !gameOver){
       this.play();
       this.updateScore();
@@ -149,7 +176,7 @@ class game{
 
   updateScore(){
     this.score += 1;
-    timeComment(this.score)
+    //timeComment(this.score)
   }
 
   gameOver(cleanup){
@@ -169,8 +196,10 @@ class game{
   }
 }
 
-class rocket{
-  constructor(x,y,dir,vel,color='rgb(0,255,0)'){
+class Rocket{
+
+  constructor(x,y,dir,vel,color='rgb(0,255,0)',callback){
+    timeComment("Rocket Created");
     this.pos = createVector(x,y)
     this.color = color;
     this.velocity = vel;
@@ -179,6 +208,9 @@ class rocket{
     this.alert = false;
     this.r = 6;
     this.learning = 0;
+    this.features = [];
+    this.features.push(callback);
+	  this.additionalFeatures();
   }
 
   draw(){
@@ -214,6 +246,11 @@ class rocket{
 
   }
 
+  additionalFeatures(){
+		timeComment("Additional Feature Added");
+
+  }
+
   guides(s=100){
     let color = (this.alert)?'rgb(255,0,0,)':'rgb(0,255,0)';
 
@@ -233,6 +270,10 @@ class rocket{
 
   backwardAcc(){
     this.acc-=0.2;
+  }
+
+  ready(fn){
+    fn(this);
   }
 
   turnRight(){
@@ -327,7 +368,7 @@ class rocket{
 
 }
 
-class meteor{
+class Meteor{
   constructor(x,y,r=5,dir=0,vel=5){
     this.pos = createVector(x,y);
     this.velocity = vel;
@@ -381,18 +422,80 @@ class meteor{
   }
 }
 
-class radar{
+class Radar{
+  constructor(rocket,range,nos){
+    timeComment("Creating Radar");
+    //timeComment(rocket);
+    this.nos = nos;
+    this.rocket = rocket;
+    this.range = range;
+    this.sensors = [];
+    this.collidor = [];
+    // delta theta
+    let dt = 360/nos;
+
+    //Adding sensor to the radar
+    for (let i = 0; i<this.nos; i++){
+      let s = new Sensor(this.rocket.pos,this.rocket.direction,i*dt,this.range);
+      s.draw();
+      this.sensors.push(s);
+    }
+
+    console.log("Sensor Table ::" ,this.sensors);
+    //let dt = 360/nos;
+
+    // Returns an array of the directions active given between the angles
+
+    function directionalIndex(A1,A2){
+      //directional idices
+      let d = [];
+
+      // delta theta
+
+      //calculation of the indexes
+
+      //start indexes
+      let start = ceil(A1/dt);
+      let end = floor(A2/dt);
+
+      for(var i = start; i <= end; i++){
+        d.push(i);
+      }
+
+      return d
+
+    }
+
+  }
+
+  draw(){
+    push();
+    translate(this.rocket.pos.x,this.rocket.pos.y);
+    rotate(this.rocket.direction);
+    fill('rgba(48, 194, 63, 0.43)')
+    circle(0,0,this.range);
+    pop();
+
+
+
+    for(let i = 0; i< this.nos;i++){
+      let s = this.sensors[i];
+      //console.log("Drawing Sensor ",this.sensors[i]);
+      s.draw()
+    }
+  }
 
 }
 
-class sensor{
+class Sensor{
   constructor(origin,reffAngle,dir,range){
-    this.origin = origin;
+		this.origin = origin;
     this.dir = dir;
     this.active = false;
     this.range = range;
     this.reffAngle = reffAngle;
     this.rotation = 0;
+    timeComment("Creating Sensor :: " + this.origin + "::" + this.reffAngle + "::" + this.dir + "::" + this.range);
     //Defining private functipn
     function globalToLocal(pos){
 
@@ -423,25 +526,35 @@ class sensor{
 
       return new Promise((resolve,reject)=>{
         if(abs(nearest) > 0){
+          reject()
           resolve(nearest)
         }
         else {
-          reject()
         }
       });
     }
 
     function drawInteraction(posInMinusY){
-      pop();
-      translate(this.origin);
+      push();
+      translate(this.origin.x,this.origin.y);
       rotate(this.dir + this.reffAngle);
       fill('rgb(28, 82, 12)');
       circle(0,posInMinusY,10);
-      push();
+      pop();
     }
 
   }
 
+  draw(){
+    push();
+    translate(this.origin.x,this.origin.y);
+    rotate(this.dir + this.reffAngle);
+    stroke('rgb(5, 70, 27)');
+    line(0,0,0,-this.range);
+    pop();
+
+    //timeComment("Drawing Sensors");
+  }
 
   deactivate(){
     this.active = false;
@@ -459,19 +572,12 @@ class sensor{
     },timeComment("Failed to compute :: gtl "));
   }
 
-  activate(activator,d,neuron){
-
-  }
   /*
 
   function globalToLocal(o){
 
   }
   */
-}
-
-function globalToLocal(){
-
 }
 
 //Generic objects
