@@ -80,6 +80,7 @@ function setup(){
       r.collision(rock);
       radar.checkCollision(rock)
       });
+    radar.activateCollisionSensors();
     },
     ()=>{
           //r = null;
@@ -373,7 +374,7 @@ class Meteor{
     push();
     translate(this.pos.x,this.pos.y);
     fill('rgba(0,150,0,0.2)');
-    circle(0,0,this.informationRadius);
+    (reff)?circle(0,0,this.informationRadius):null;
     fill(255,0,0);
     circle(0,0,this.r);
 
@@ -423,12 +424,16 @@ class Radar{
     this.range = range;
     this.sensors = [];
     this.collidor = [];
+    this.angles = [];
+    this.collidorDistance = [];
+    this.vector = []
+    this.collidorOrder = [];
     // delta theta
     let dt = 360/nos;
 
     //Adding sensor to the radar
     for (let i = 0; i<this.nos; i++){
-      let s = new Sensor(this.rocket.pos,this.rocket.direction,i*dt,this.range);
+      let s = new Sensor(this.rocket,i*dt,this.range);
       s.draw();
       this.sensors.push(s);
     }
@@ -436,38 +441,19 @@ class Radar{
     console.log("Sensor Table ::" ,this.sensors);
     //let dt = 360/nos;
 
-    // Returns an array of the directions active given between the angles
-
-    function directionalIndex(A1,A2){
-      //directional idices
-      let d = [];
-
-      // delta theta
-
-      //calculation of the indexes
-
-      //start indexes
-      let start = ceil(A1/dt);
-      let end = floor(A2/dt);
-      for(var i = start; i <= end; i++){
-        d.push(i);
-      }
-
-      return d
-
-    }
-
 
   }
 
   checkCollision(meteor){
     let x = createVector(meteor.pos.x,meteor.pos.y)
-    console.log(x,meteor.pos)
+    //console.log(x,meteor.pos)
     let d = x.sub(this.rocket.pos).mag()
     if( d < this.range){
       //Setup the collidor in the collision check engine
       this.collidor.push(meteor)
-      if(MeteorAlert){
+      this.collidorDistance.push(d);
+      this.vector.push(x);
+      if(reff){
         push();
         stroke('rgb(255, 0, 0)');
         line(this.rocket.pos.x,this.rocket.pos.y,meteor.pos.x,meteor.pos.y);
@@ -478,20 +464,34 @@ class Radar{
 
   }
 
+  activateCollisionSensors(){
+    let radar = this
+
+    sortCollidor(radar).then(()=>{
+      angleSubtendedByMeteor(radar).then(()=>{
+        activateSensor(radar).then(()=>{
+          //deactivate collidors
+          deactivateCollidor(this);
+        })
+      })
+    })
+  }
+
+
   draw(){
-    push();
-    translate(this.rocket.pos.x,this.rocket.pos.y);
-    rotate(this.rocket.direction);
-    fill('rgba(48, 194, 63, 0.43)')
-    circle(0,0,this.range);
-    pop();
-
-
+    if(reff) {
+      push();
+      translate(this.rocket.pos.x,this.rocket.pos.y);
+      rotate(this.rocket.direction);
+      fill('rgba(48, 194, 63, 0.43)')
+      circle(0,0,this.range);
+      pop();
+    }
 
     for(let i = 0; i< this.nos;i++){
       let s = this.sensors[i];
       //console.log("Drawing Sensor ",this.sensors[i]);
-      //s.draw()
+      (reff)?(i==0)?s.update('rgb(235, 15, 213)'):s.update():null;
     }
   }
 
@@ -501,13 +501,134 @@ class Radar{
 
 }
 
+
+//Private functions for class Radar
+
+// Returns an array of the directions active given between the angles
+
+function directionalIndex(radar,A1,A2){
+  //directional idices
+  let d = [];
+
+  // delta theta
+
+  //calculation of the indexes
+
+  //start indexes
+  let start = ceil(A1/dt);
+  let end = floor(A2/dt);
+  for(var i = start; i <= end; i++){
+    d.push(i);
+  }
+
+  return d
+
+}
+
+// get A1 and A2
+function angleSubtendedByMeteor(radar){
+  for(let i = 0; i < radar.collidor.length; i++){
+    let meteor = radar.collidor[radar.collidorOrder[i]]
+    //Deviation
+    let devi = asin(meteor.r/radar.collidorDistance[i]);
+    let directAngle = radar.vector[radar.collidorOrder[i]].heading() + 90 - radar.rocket.direction;
+    let angle = [directAngle-devi, directAngle + devi];
+    radar.angles.push(angle);
+    console.log("Angle Subtended , MainAngle", devi,directAngle);
+  }
+
+  console.log("ANgle Subtended by Meteor ",   radar.angles);
+  return new Promise((resolve)=>{
+    resolve();
+  });
+}
+
+function deactivateCollidor(radar){
+  radar.collidor = [];
+  radar.angles = [];
+  radar.collidorDistance = [];
+  radar.order = [];
+  radar.vector = [];
+  radar.collidorOrder = []
+}
+
+
+//by the end of this program we will have sorted array indexs and sorted
+//collidor distance
+
+function sortCollidor(radar){
+  let cr = radar.collidorDistance;
+  let i = 0;
+  let m = [];
+
+  console.log("Collidor length",cr,cr.length)
+
+  for (let k = 0 ; k < cr.length ; k++) m.push(k);
+
+  //console.log("Order dummy" , m);
+
+  while(i < cr.length){
+    let x = findMaxAndPutForward(i)
+    //console.log("Inserting X : ", x)
+    i++;
+  }
+
+  function findMaxAndPutForward(start){
+      let max = cr[start];
+      let mm = m[start];
+      let maxi = start;
+      for(let j = start + 1; j < cr.length ; j++){
+        if(cr[j] > max ){
+          maxi = j;
+          max = cr[j]
+          mm = m[j]
+        }
+
+      }
+
+        //console.log("(Max , Maxi)" , max , m[maxi]);
+        //Moving forward
+        for(let j = maxi; j >start; j--){
+          cr[j] = cr[j-1];
+          m[j] = m[j-1];
+        }
+
+        cr[start] = max;
+        m[start] = mm;
+
+        //console.log("Modified Cr :: ", cr, m);
+        return m[maxi];
+    }
+
+  //console.log("Order of collidor :: " , m ,cr)
+  radar.collidorOrder = m.reverse();
+  radar.collidorDistance = cr.reverse();
+
+  console.log("Collidor sorted :: ",radar.collidorDistance , radar.collidorOrder)
+  return new Promise((resolve)=>{
+    resolve();
+  });
+}
+
+//Here we will be activating the required sensor using the directional index function
+//This will help us initialize sensors coming from nearest collidor
+
+function activateSensor(radar){
+
+  return new Promise((resolve)=>{
+    resolve();
+  });
+
+}
+
 class Sensor{
-  constructor(origin,reffAngle,dir,range){
-		this.origin = origin;
+  constructor(rocket,dir,range){
+    this.rocket = rocket;
+    this.origin = this.rocket.pos;
     this.dir = dir;
     this.active = false;
     this.range = range;
-    this.reffAngle = reffAngle;
+    this.reffAngle = this.rocket.direction;
     this.rotation = 0;
     timeComment("Creating Sensor :: " + this.origin + "::" + this.reffAngle + "::" + this.dir + "::" + this.range);
     //Defining private functipn
@@ -559,15 +680,21 @@ class Sensor{
 
   }
 
-  draw(){
+  draw(c='rgb(5, 70, 27)'){
+    (debug)?console.log(this.dir,this.reffAngle):null1;
     push();
     translate(this.origin.x,this.origin.y);
     rotate(this.dir + this.reffAngle);
-    stroke('rgb(5, 70, 27)');
+    stroke(c);
     line(0,0,0,-this.range);
     pop();
 
     //timeComment("Drawing Sensors");
+  }
+
+  update(c){
+    this.reffAngle = this.rocket.direction;;
+    this.draw(c);
   }
 
   deactivate(){
