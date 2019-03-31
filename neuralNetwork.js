@@ -1,10 +1,11 @@
+//let debug = true;
+
 class NeuralNetwork{
   constructor(layers,activationFunction=tf.sigmoid){
 
     this.layers = layers.length;
     this.neuralConfiguration = layers;
     this.layer = []
-    this.activationMapping = [];
     let self = this;
 
     layers.forEach(function(ele){
@@ -15,7 +16,6 @@ class NeuralNetwork{
         activationMapping.push(null);
       }
       self.layer.push(layer);
-      self.activationMapping.push(activationMapping);
     });
 
     this.weights = [];
@@ -28,13 +28,12 @@ class NeuralNetwork{
       let randomBiases = tf.randomUniform([this.neuralConfiguration[i+1]]);
       this.biases.push(randomBiases);
     }
-
-    //init weights and biases
-
   }
 
-  setActivationMapping(i,j,fn){
-    this.activationMapping[i][j] = fn;
+  activate(layer,neuron,fn){
+    this.layer[layer].data().then((d)=>{
+      fn(d[neuron]);
+    });
   }
 
   //We will pass the first input layer of the neural network

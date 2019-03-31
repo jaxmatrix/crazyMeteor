@@ -1,6 +1,6 @@
 //Debugging
 let reff = false;
-let debug = false;
+let debug = true;
 let MeteorAlert = false;
 if(debug){
 
