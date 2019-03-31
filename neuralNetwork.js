@@ -85,5 +85,4 @@ class NeuralNetwork{
     }
     //console.log("Updated Layer :: ", this.layer);
   }
-
 }
