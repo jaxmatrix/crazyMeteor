@@ -1,6 +1,7 @@
 //Debugging
 let reff = true;
 let debug = false;
+let stop = false;
 let MeteorAlert = true;
 if(debug){
 
@@ -12,8 +13,8 @@ if(debug){
 
 */
 
-let height = 400 ;
-let width = 400;
+let height = 800 ;
+let width = 800;
 let action = false;
 let gameOver = false;
 let g;
@@ -54,7 +55,7 @@ function setup(){
 
     action = true;
 
-    r = new Rocket(width/2,height/2,10,10,'rgb(25,25,100)');
+    r = new Rocket(width/2,height/2,0,10,'rgb(25,25,100)');
     radar = new Radar(r,250,20);
 
 
@@ -64,8 +65,8 @@ function setup(){
         g.gameOver()
       });
 
-    for(i=0;i<1;i++){
-      let x=new Meteor(random(width),random(height),random(10,30),random(360),random(6));
+    for(i=0;i<10;i++){
+      let x=new Meteor(random(width),random(height),random(12,24),random(360),random(6));
       x.draw();
       m.push(x);
     }
@@ -75,6 +76,7 @@ function setup(){
     background(240);
     radar.update();
     r.move();
+    g.reff();
     m.forEach((rock)=>{
       rock.move();
       r.collision(rock);
@@ -138,12 +140,24 @@ class game{
     background(240);
     push();
     fill(0);
+
+
     translate(width/2,height/2);
     rect(0,0,width/2,height/2,0.2*width);
     fill(100);
     textAlign(CENTER,CENTER)
     textSize(height/4);
     text("Start",0,0);
+    pop();
+  }
+
+  reff(){
+    push();
+    stroke('rgba(0, 0, 0, 0.2)')
+    for(let i = 0; i < height/10;i++){
+      line(i*height/10,0,i*height/10,height);
+      line(0,i*height/10,height,i*height/10)
+    }
     pop();
   }
 
@@ -217,7 +231,7 @@ class Rocket{
 
     //Rocket
     fill(this.color);
-    if(reff){
+    if(reff && false){
       this.guides(400);
     }
 
@@ -364,7 +378,7 @@ class Rocket{
 class Meteor{
   constructor(x,y,r=5,dir=0,vel=5){
     this.pos = createVector(x,y);
-    this.velocity = vel;
+    this.velocity = 0;
     this.direction = dir;
     this.r = r;
     this.informationRadius = r*4;
@@ -394,7 +408,10 @@ class Meteor{
       this.velocity = -vmax;
     }
     let v = createVector(sin(this.direction),-cos(this.direction)).mult(this.velocity)
-    this.pos.add(v);
+
+    if(!stop){
+      this.pos.add(v)
+    }
 
     if(this.pos.x <= 0){
       this.pos.x = width;
@@ -473,15 +490,15 @@ class Radar{
     sortCollidor(radar).then(()=>{
       angleSubtendedByMeteor(radar).then(()=>{
         activateSensor(radar).then((d)=>{
-          console.log("Looking Sensor Acitivity",d);
+          (debug)?console.log("Looking Sensor Acitivity",d):null;
           radar.sensorActivator.sensorFlushActivity(radar);
 
-          console.log("NEver coming up what the fuck");
+          (debug)?console.log("NEver coming up what the fuck"):null;
           //deactivate collidors
-          this.deactivateCollidor(radar);
-        })
-      })
-    })
+          radar.deactivateCollidor(radar);
+        }).catch(ErrorHandler("Sensor Activation"));
+      }).catch(ErrorHandler("Angle calculation problem"));
+    }).catch(ErrorHandler("Sorting Collidor"));
   }
 
 
@@ -507,7 +524,7 @@ class Radar{
   }
 
   deactivateCollidor(){
-    (debug || true)?console.log("Deactivating Sensor"):null;
+    (debug )?console.log("Deactivating Sensor"):null;
 
     this.collidor = [];
     this.angles = [];
@@ -516,7 +533,7 @@ class Radar{
     this.vector = [];
     this.collidorOrder = [];
 
-    (debug || true)?console.log("Human Verification of Deactivation",this.collidor,this.angles,this.collidorDistance,this.order,this.vector,this.collidorOrder):null;
+    (debug )?console.log("Human Verification of Deactivation",this.collidor,this.angles,this.collidorDistance,this.order,this.vector,this.collidorOrder):null;
   }
 
 }
@@ -536,14 +553,13 @@ function directionalIndex(radar,A1,A2){
   //calculation of the indexes
 
   //start indexes
-  let start = ceil(A1/dt);
+  let start = ceil((A1+dt*0.1)/dt);
   let end = floor(A2/dt);
-  (debug)?console.log("start,end",start,end):null;
+  (debug )?console.log("start,end",A1,A2,start,end):null;
   for(let i = start; i <= end; i++){
 
     d.push(((i>0)?i:radar.nos+i)%radar.nos);
   }
-
   return d
 
 }
@@ -560,10 +576,10 @@ function angleSubtendedByMeteor(radar){
 
     let angle = [directAngle-devi, directAngle + devi];
     radar.angles.push(angle);
-    console.log("Angle Subtended , MainAngle", devi,directAngle);
+    (debug)?console.log("Angle Subtended , MainAngle", devi,directAngle):null;
   }
 
-  console.log("ANgle Subtended by Meteor ",   radar.angles);
+  (debug)?console.log("ANgle Subtended by Meteor ",radar.angles):null;
   return new Promise((resolve)=>{
     resolve();
   });
@@ -580,7 +596,7 @@ function sortCollidor(radar){
   let i = 0;
   let m = [];
 
-  console.log("Collidor length",cr,cr.length)
+  (debug)?console.log("Collidor length",cr,cr.length):null;
 
   for (let k = 0 ; k < cr.length ; k++) m.push(k);
 
@@ -623,7 +639,7 @@ function sortCollidor(radar){
   radar.collidorOrder = m.reverse();
   radar.collidorDistance = cr.reverse();
 
-  console.log("Collidor sorted :: ",radar.collidorDistance , radar.collidorOrder)
+  (debug )?console.log("Collidor sorted :: ",radar.collidorDistance , radar.collidorOrder):null;
   return new Promise((resolve)=>{
     resolve();
   });
@@ -637,13 +653,15 @@ function activateSensor(radar){
   let ar = radar.angles
   //let d = null;
   for(let i =0 ; i < ar.length ; i++){
-    (debug)?console.log("Activation of Sensor"):null;
     let d = directionalIndex(radar,ar[i][0],ar[i][1]);
+    (debug )?console.log("Activation of Sensor",d):null;
 
-    radar.sensorActivator.registerActivity(radar,d);
-    (debug)?console.log(d):null;
+    //Adding Meteor to the sensors
+    radar.sensorActivator.registerActivity(radar,d,radar.collidorOrder[i]);
+    //(debug)?console.log(d):null;
   }
 
+  (debug  )?console.log("Angles Tables ::",radar.angles):null;
   return new Promise((resolve)=>{
     resolve();
   });
@@ -661,13 +679,14 @@ class SensorActivationHandler{
   }
 
 //D is the order array for the the activation
-  registerActivity(radar,d){
+  registerActivity(radar,d,collidorIndex){
     let self = this;
-    (debug || true)?console.log("Meteor Matrix",d,radar.collidor[e]):null;
+    let meteor = radar.collidor[collidorIndex];
+    (debug )?console.log("Meteor Matrix",d,meteor):null;
     d.forEach(function(e){
-      self.activity[e] = (!self.activity[e][0])?[1,radar.collidor[e]]:[0,null];
-      (debug || true)?console.log("Registering meteor for sensor",d,radar.collidor[e]):null;
+      self.activity[e] = (!self.activity[e][0])?[1,meteor]:self.activity[e];
     });
+    (debug )?console.log("Registering meteor for sensor",self.activity):null;
 
     return new Promise((resolve)=>{
       resolve(self);
@@ -675,21 +694,22 @@ class SensorActivationHandler{
   }
 
   sensorFlushActivity(radar){
-    (debug || true)?console.log("Activity Matrix Before",this.activity):null;
+    //(debug )?console.log("Activity Matrix Before",this.activity):null;
     for(let i = 0 ; i < this.activity.length ; i ++){
       if(this.activity[i][0]){
-        (debug || true)?console.log("FLUSING ACTIVITY OF SENSOR:",i):null;
-        //radar.sensors[i].activate(this.activity[i][1]);
+        radar.sensors[i].activate(this.activity[i][1]);
       }
     }
+    (debug  )?console.log("FLUSING ACTIVITY OF SENSOR:",this.activity):null;
 
-    this.acitivity = [];
+
+    this.activity = [];
 
     for(let i =0 ; i < radar.nos; i++){
-      this.acitivity.push([0, null]);
+      this.activity.push([0, null]);
     }
 
-    (debug || true)?console.log("Activity Matrix After",this.activity):null;
+    //(debug )?console.log("Activity Matrix After",this.activity):null;
 
   }
 }
@@ -714,12 +734,10 @@ class Sensor{
     (debug)?console.log(this.dir,this.reffAngle):null;
     this.color = (c)?c:this.color;
     push();
+    strokeWeight(1);
     translate(this.origin.x,this.origin.y);
     rotate(this.dir + this.reffAngle);
-    if(this.active){
-      stroke('rgb(255, 0, 0)');
-      strokeWeight(4);
-    }
+    stroke(this.color)
     line(0,0,0,-this.range);
     pop();
 
@@ -740,17 +758,17 @@ class Sensor{
     this.active = true;
     let self = this;
     globalToLocal(self,activator.pos).then((pos)=>{
-      (debug)?console.log("global to local position:", pos):null;
-      //getNearestInterceptAlongTheDirectionOfVector(pos,activator.r).then((nearest)=>{
+      (debug)?console.log("global to local position:",this.origin, pos):null;
+      getNearestInterceptAlongTheDirectionOfVector(pos,activator,this.dir).then((nearest)=>{
         /*
           neuron.set(abs(nearest)).then(()=>{
         },timeComment("Failed to set Neuron " + this.dir ));
 
         */
-        //drawInteraction(self,nearest);
-        self.deactivate();
-      //},timeComment("Failed to compute :: intercept"));
-    },(e)=>{timeComment("Failed to compute :: gtl ::" + e )});
+        (reff)?drawInteraction(self,nearest):null;
+        //self.deactivate();
+      },(er)=>{console.log("Intercept error",er)}/*timeComment("Failed to compute :: intercept")*/).catch(ErrorHandler("Intercept calculation"));
+    },(e)=>{timeComment("Failed to compute :: gtl ::" + e )}).catch(ErrorHandler("GTL"));
   }
 
   /*
@@ -767,40 +785,43 @@ function globalToLocal(sensor,pos){
   //position copy-> as this is passed by reference and this changes when used
   let posC = createVector(pos.x,pos.y)
   let shift = posC.sub(sensor.origin)
-  rotation = shift.heading() + 90 - (sensor.reffAngle + sensor.dir);
+  let rotation = (shift.heading() + 90 - (sensor.reffAngle + sensor.dir));
   let newC = createVector(cos(rotation),sin(rotation)).mult(shift.mag());
+  (debug)?console.log("Checking Rotation as error" ,shift.x,shift.y,newC, rotation,sensor.dir):null;
   return new Promise(function(resolve,failure){
     if(newC){
       //console.log("changed positions")
       resolve(newC);
     }
     else {
-
       failure(newC);
     }
   });
 }
 
-function getNearestInterceptAlongTheDirectionOfVector(pos,r){
-  let D = sqrt(r*r - pos.x*pos.x)
+function getNearestInterceptAlongTheDirectionOfVector(pos,meteor,dir=0){
+  let r = meteor.r
+  let unSqrtD = r*r - pos.y*pos.y
+  let D = Math.sqrt(unSqrtD);
+  (debug)?console.log("Checking value of the Delta",D):null;
   let Y = [
-    -(pos.y + D ),
-    -(pos.y - D )
+    -(pos.x + D ),
+    -(pos.x - D )
   ]
 
-  let nearest = 0;
-  for (var c in Y){
-    nearest = (abs(nearest) <= abs(c)) ? c : nearest;
+  let nearest = (abs(Y[0])>=abs(Y[1]))?Y[1]:Y[0];
+
+  (debug )?console.log("Nearest coordinate :: ",dir,meteor,pos,D,Y,nearest,unSqrtD):null;
+  let er = {
+    dir,meteor,pos,D,Y,nearest,unSqrtD
   }
 
-  (debug)?console.log("Nearest coordinate :: ",r,pos,D,Y,nearest):null;
-
   return new Promise((resolve,reject)=>{
-    if(abs(nearest) > 0){
+    if(nearest != NaN ){
       resolve(nearest)
     }
     else {
-      reject()
+      reject(er)
     }
   });
 }
@@ -808,7 +829,10 @@ function getNearestInterceptAlongTheDirectionOfVector(pos,r){
 function drawInteraction(sensor,posInMinusY){
   push();
   translate(sensor.origin.x,sensor.origin.y);
-  rotate(sensor.dir + sensor.reffAngle);
+  rotate(sensor.reffAngle+sensor.dir);
+  strokeWeight(4);
+  stroke('rgb(207, 63, 63)')
+  line(0,0,0,-sensor.range)
   fill('rgb(28, 82, 12)');
   circle(0,posInMinusY,10);
   pop();
@@ -878,4 +902,8 @@ function mouseIsClicked(box,success,fail){
 function timeComment(comment,){
   let t = new Date().getTime()/1000;
   console.log(comment,t-now);
+}
+
+function ErrorHandler(area){
+  (debug)?console.log("Failure Occured at ::",area):null;
 }
