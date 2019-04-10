@@ -24,7 +24,7 @@ let SPACE = 32;
 let r;
 let radar;
 let m = [];
-
+let infoBonus = 0;
 
 
 function setup(){
@@ -56,7 +56,7 @@ function setup(){
     action = true;
 
     r = new Rocket(width/2,height/2,0,10,'rgb(25,25,100)');
-    radar = new Radar(r,250,20);
+    radar = new Radar(r,250,100);
 
 
     r.draw();
@@ -365,7 +365,8 @@ class Rocket{
     else {
       if(d <= this.r + other.informationRadius){
         this.learning = 3;
-      }
+     	console.log("Learning increased by three")
+	  }
       this.alert=false;
     }
 
@@ -699,6 +700,32 @@ class SensorActivationHandler{
       if(this.activity[i][0]){
         radar.sensors[i].activate(this.activity[i][1]);
       }
+      else{
+        let wall = {collision:false,x:null,y:null}
+        let x = radar.rocket.pos.x + radar.range*cos(radar.sensors[i].dir+radar.sensors[i].reffAngle)
+        /*
+        if((radar.rocket.pos.x*cos(radar.sensor[i].dir) - radar.range < 0)){
+          //wall.x = 0;
+          wall.collision = true;
+        }
+        else if(radar.rocket.pos.x + radar.range > width){
+          //wall.x = width;
+          wall.collision = true;
+        }
+
+        if((radar.rocket.pos.y - radar.range < 0)){
+          //wall.y = 0;
+          wall.collision = true;
+        }
+        else if(radar.rocket.pos.y + radar.range > height){
+          //wall.y = height;
+          wall.collision = true;
+        }
+
+        if(wall.collision){
+          radar.sensors[i].activate(wall,true);
+        }*/
+      }
     }
     (debug  )?console.log("FLUSING ACTIVITY OF SENSOR:",this.activity):null;
 
@@ -753,22 +780,27 @@ class Sensor{
     this.active = false;
   }
 
-  activate(activator,neuron=null){
+  activate(activator,wallType=false,neuron=null){
     //this.color = 'rgb(195, 39, 39)';
     this.active = true;
     let self = this;
-    globalToLocal(self,activator.pos).then((pos)=>{
-      (debug)?console.log("global to local position:",this.origin, pos):null;
-      getNearestInterceptAlongTheDirectionOfVector(pos,activator,this.dir).then((nearest)=>{
-        /*
+    if(!wallType){
+      globalToLocal(self,activator.pos).then((pos)=>{
+        (debug)?console.log("global to local position:",this.origin, pos):null;
+        getNearestInterceptAlongTheDirectionOfVector(pos,activator,this.dir).then((nearest)=>{
+          /*
           neuron.set(abs(nearest)).then(()=>{
-        },timeComment("Failed to set Neuron " + this.dir ));
+          },timeComment("Failed to set Neuron " + this.dir ));
 
-        */
-        (reff)?drawInteraction(self,nearest):null;
-        //self.deactivate();
-      },(er)=>{console.log("Intercept error",er)}/*timeComment("Failed to compute :: intercept")*/).catch(ErrorHandler("Intercept calculation"));
-    },(e)=>{timeComment("Failed to compute :: gtl ::" + e )}).catch(ErrorHandler("GTL"));
+          */
+          (reff)?drawInteraction(self,nearest):null;
+          //self.deactivate();
+        },(er)=>{console.log("Intercept error",er)}/*timeComment("Failed to compute :: intercept")*/).catch(ErrorHandler("Intercept calculation"));
+      },(e)=>{timeComment("Failed to compute :: gtl ::" + e )}).catch(ErrorHandler("GTL"));
+    }
+    else {
+
+    }
   }
 
   /*
