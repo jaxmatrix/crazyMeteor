@@ -864,9 +864,9 @@ function drawInteraction(sensor,posInMinusY){
 	rotate(sensor.reffAngle+sensor.dir);
 	strokeWeight(4);
 	stroke('rgb(207, 63, 63)')
-	line(0,0,0,-sensor.range)
+	line(0,0,0,posInMinusY)
 	fill('rgb(28, 82, 12)');
-	circle(0,posInMinusY,10);
+	//circle(0,posInMinusY,10);
 	pop();
 }
 
